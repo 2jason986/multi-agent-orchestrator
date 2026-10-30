@@ -35,6 +35,12 @@ class ToolRegistryTests(unittest.TestCase):
         self.assertTrue(result.ok)
         self.assertEqual(result.output, 42)
 
+    def test_undeclared_arguments_are_dropped(self) -> None:
+        result = self.registry.call("double", {"value": 5, "chatty_extra": "ignored"})
+        self.assertTrue(result.ok)
+        self.assertEqual(result.output, 10)
+        self.assertNotIn("chatty_extra", result.arguments)
+
     def test_unknown_tool_is_reported_not_raised(self) -> None:
         result = self.registry.call("missing", {})
         self.assertFalse(result.ok)

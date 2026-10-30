@@ -25,7 +25,8 @@ def build_orchestrator(**kwargs: object) -> Orchestrator:
 
 class OrchestratorTests(unittest.TestCase):
     def test_escalates_priority_for_a_production_outage(self) -> None:
-        result = build_orchestrator().handle(build_orchestrator().ticket_store.get("T-1002"))
+        orchestrator = build_orchestrator()
+        result = orchestrator.handle(orchestrator.ticket_store.get("T-1002"))
         self.assertEqual(result.priority, "high")
 
     def test_revision_loop_ends_in_approval(self) -> None:

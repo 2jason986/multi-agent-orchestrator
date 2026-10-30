@@ -51,7 +51,8 @@ review rounds : 6
 ```
 
 每条工单都经历一次驳回和一次修订，第二轮审核通过。轨迹里的 `verdict=revise`
-到 `verdict=approve` 就是这个项目想展示的东西。
+到 `verdict=approve` 就是这个项目想展示的东西。产物有三个文件：`report.md`（每条工单的回复加轨迹）、
+`traces.json`（机器可读的事件流）、`tickets.json`（跑完后的工单库，能看到状态从 `open` 变成 `answered`）。
 
 ## 接真实模型
 
@@ -84,7 +85,7 @@ src/orchestra/
 data/
   knowledge_base/   六篇知识库文档
   tickets.json      三条示例工单
-tests/              34 个单元测试与端到端测试
+tests/              36 个单元测试与端到端测试
 ```
 
 ## 测试
