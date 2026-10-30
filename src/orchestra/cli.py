@@ -6,6 +6,7 @@ import argparse
 import json
 import sys
 from pathlib import Path
+from typing import Any
 
 from .knowledge import KnowledgeBase
 from .llm import PROVIDER_PRESETS, LLMClient, OpenAICompatibleClient
@@ -73,6 +74,18 @@ def _write_report(results: list[RunResult], out_dir: Path) -> Path:
     return report
 
 
+def _summary_payload(result: RunResult) -> dict[str, Any]:
+    """Machine-readable summary, kept in sync with the markdown report."""
+    return {
+        "ticket_id": result.ticket_id,
+        "approved": result.approved,
+        "rounds": result.rounds,
+        "priority": result.priority,
+        "citations": result.citations,
+        "tokens": result.tokens,
+    }
+
+
 def cmd_run(args: argparse.Namespace) -> int:
     orchestrator = _build_orchestrator(args)
     ticket = orchestrator.ticket_store.get(args.ticket)
@@ -83,14 +96,7 @@ def cmd_run(args: argparse.Namespace) -> int:
         Path(args.out).write_text(result.to_markdown(), encoding="utf-8")
         print(f"\nwritten to {args.out}")
     if args.json:
-        payload = {
-            "ticket_id": result.ticket_id,
-            "approved": result.approved,
-            "rounds": result.rounds,
-            "priority": result.priority,
-            "citations": result.citations,
-        }
-        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        print(json.dumps(_summary_payload(result), ensure_ascii=False, indent=2))
     return 0
 
 

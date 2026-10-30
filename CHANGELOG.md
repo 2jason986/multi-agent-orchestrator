@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--timeout` and `--json-mode` (`response_format=json_object`, honoured by OpenAI,
   DeepSeek and DashScope).
 - Token usage from the API response is aggregated across agents and shown in the
-  report; the mock backend reports none, so its output is unchanged.
+  report and the `--json` summary; the mock backend reports none, so its output is
+  unchanged.
 - Wire-level tests that run the client against a local fake `/chat/completions`
   endpoint: request shape, retries, error unwrapping and presets.
 
@@ -37,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `LLMRetryableError`, terminal ones raise `LLMError`.
 - Provider error bodies are unwrapped to `error.message` instead of a 500-character
   JSON dump.
-- Test suite grew to 50 cases.
+- Test suite grew to 51 cases.
 
 ## [0.1.0] - 2026-10-30
 
