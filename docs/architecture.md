@@ -65,6 +65,8 @@ later.
 | Model returns prose instead of JSON | `extract_json` scans for a balanced object; if none, `AgentFormatError` surfaces to the CLI |
 | Tool raises | `ToolRegistry.call` captures it into `ToolResult(ok=False, error=...)` and the model sees the error in the next observation |
 | Tool hallucinated by the model | Unknown tool name is reported the same way, not raised |
+| Tool call carries undeclared arguments | `ToolRegistry.call` drops them before dispatch, so a chatty model cannot turn a valid call into a `TypeError` |
+| Agent wants more tools than its budget | The dangling `tool_calls` request is removed, `tool_budget_exhausted` is set on the outcome, and the orchestrator records an `agent.warning` event instead of mistaking the request for an answer |
 | Reviewer keeps rejecting | Loop stops at `max_review_rounds`, ticket status becomes `needs_human` |
 | Retrieval returns nothing | Researcher answers "no matching notes", responder is told to escalate rather than invent |
 | Model endpoint unreachable or key missing | `LLMError` with the endpoint and status, printed by the CLI with exit code 1 |

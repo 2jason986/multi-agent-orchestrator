@@ -65,6 +65,10 @@ review rounds : 6
 report        : examples/output/report.md
 ```
 
+It writes three files: `report.md` (reply plus trace per ticket), `traces.json`
+(machine-readable events) and `tickets.json` (the ticket store after the run, so
+the status change from `open` to `answered` is visible).
+
 One ticket's reply and part of its trace:
 
 ```markdown
@@ -132,7 +136,7 @@ src/orchestra/
 data/
   knowledge_base/    six support notes
   tickets.json      three sample tickets
-tests/              34 unit and end-to-end tests
+tests/              36 unit and end-to-end tests
 ```
 
 ## Tests

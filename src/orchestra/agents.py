@@ -176,6 +176,11 @@ class Agent:
                     "content": "OBSERVATIONS:\n" + json.dumps(observations, ensure_ascii=False),
                 }
             )
+        else:
+            # The loop ran out of tool rounds while the model still wanted tools.
+            # Drop the dangling request so callers cannot mistake it for an answer.
+            data.pop("tool_calls", None)
+            data["tool_budget_exhausted"] = True
 
         return AgentOutcome(
             agent=self.name,

@@ -102,6 +102,8 @@ def cmd_demo(args: argparse.Namespace) -> int:
     print(f"needs a human : {summary['needs_human']}")
     print(f"review rounds : {summary['rounds']}")
     report = _write_report(results, Path(args.out))
+    # The demo mutates ticket status in memory only; persist it so the run is inspectable.
+    orchestrator.ticket_store.save(Path(args.out) / "tickets.json")
     print(f"report        : {report}")
     return 0
 

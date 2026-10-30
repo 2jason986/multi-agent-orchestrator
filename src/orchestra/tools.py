@@ -81,6 +81,10 @@ class ToolRegistry:
             tool = self.get(name)
         except KeyError as exc:
             return ToolResult(name=name, arguments=arguments, output=None, ok=False, error=str(exc))
+        spec = tool.spec
+        if spec.parameters:
+            # Models love to invent extra fields; keep only what the tool declares.
+            arguments = {key: value for key, value in arguments.items() if key in spec.parameters}
         try:
             return ToolResult(name=name, arguments=arguments, output=tool(**arguments))
         except Exception as exc:  # noqa: BLE001 - surfaced to the model, not swallowed

@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- An agent that ran out of tool rounds used to hand its dangling `tool_calls`
+  payload back as if it were an answer. It now drops the request, sets
+  `tool_budget_exhausted` and the orchestrator records a trace warning.
+- Tool calls carrying fields the tool never declared raised `TypeError` and burned
+  a round; undeclared arguments are now dropped before dispatch.
+- `orchestra demo` mutated ticket status in memory only; the resulting store is
+  now written next to the report.
+
+### Changed
+
+- Test suite grew to 36 cases.
+
 ## [0.1.0] - 2026-10-30
 
 ### Added
@@ -25,7 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Execution tracing written as Markdown and JSON, covering agent spans, tool calls
   and review verdicts.
 - CLI with `run` and `demo` subcommands.
-- 34 unit and end-to-end tests running against the mock model.
+- 36 unit and end-to-end tests running against the mock model.
 - GitHub Actions CI on Python 3.10, 3.11 and 3.12, plus Dependabot, issue and pull
   request templates, Code of Conduct, security policy and contributing guide.
 

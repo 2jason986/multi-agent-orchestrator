@@ -63,6 +63,23 @@ class AgentTests(unittest.TestCase):
         with self.assertRaises(AgentFormatError):
             agent.run("TASK: whatever")
 
+    def test_exhausted_tool_budget_is_flagged_not_mistaken_for_an_answer(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            FunctionTool(
+                spec=ToolSpec(name="echo", description="echo", parameters={"value": "str"}),
+                func=lambda value: value,
+            )
+        )
+        request = '{"tool_calls": [{"name": "echo", "arguments": {"value": "a"}}]}'
+        client = ScriptedClient([request, request, request])
+        agent = Agent("researcher", client, registry=registry, max_tool_rounds=1)
+        outcome = agent.run("TASK: loop forever")
+        self.assertTrue(outcome.get("tool_budget_exhausted"))
+        self.assertNotIn("tool_calls", outcome.data)
+        # max_tool_rounds=1 means the first and the follow-up round both ran tools.
+        self.assertEqual(len(outcome.tool_results), 2)
+
     def test_unknown_role_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             Agent("nope", ScriptedClient([]))

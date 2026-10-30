@@ -113,6 +113,12 @@ class Orchestrator:
             )
         notes = str(research.get("summary", ""))
         citations = [str(item) for item in research.get("citations") or []]
+        if research.get("tool_budget_exhausted"):
+            trace.record(
+                "agent.warning",
+                "researcher",
+                "tool rounds exhausted before the model produced an answer",
+            )
         trace.close_span(
             started,
             "agent",
