@@ -104,20 +104,44 @@ round approves. That loop is the point of the project, not an accident.
 ## Using a real model
 
 The default provider is `mock`: a scripted, deterministic client that exercises the
-whole pipeline offline. Point it at any OpenAI-compatible endpoint — OpenAI,
-DeepSeek, Moonshot, Qwen, vLLM, Ollama — by setting three environment variables:
+whole pipeline offline. For a real backend, pick a preset and set one variable:
 
 ```bash
-export ORCHESTRA_API_KEY=sk-...
-export ORCHESTRA_BASE_URL=https://api.deepseek.com/v1
-export ORCHESTRA_MODEL=deepseek-chat
+export ORCHESTRA_API_KEY=sk-...            # your DeepSeek / OpenAI key
 
-python -m orchestra.cli --provider openai --model deepseek-chat demo
+python -m orchestra.cli --provider deepseek demo
+python -m orchestra.cli --provider deepseek run --ticket T-1002 --json
 ```
 
-No SDK is installed; the client talks to `/chat/completions` with `urllib`. If you
-prefer a different vendor, implement the four-line `LLMClient` protocol and pass
-your object to `Orchestrator`.
+| Provider | Base URL | Default model |
+|---|---|---|
+| `deepseek` | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| `openai` | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| `moonshot` | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+| `dashscope` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| `custom` | `ORCHESTRA_BASE_URL` | `ORCHESTRA_MODEL` |
+
+`ORCHESTRA_BASE_URL` and `ORCHESTRA_MODEL` override any preset, so vLLM, Ollama and
+internal gateways work with `--provider custom` and no code changes. No SDK is
+installed; the client speaks `/chat/completions` with `urllib`.
+
+What the client already handles:
+
+- **429 and 5xx are retried** twice with exponential backoff, plus network blips.
+  Auth errors and malformed requests fail immediately — retrying them only burns time.
+- **Provider error bodies are unwrapped** to `error.message`, so a failed run says
+  `401: Authentication Fails` instead of dumping raw JSON.
+- **`--timeout`** bounds a slow endpoint; `deepseek-reasoner` usually needs more than
+  the 60-second default.
+- **`--json-mode`** sends `response_format=json_object`, which OpenAI, DeepSeek and
+  DashScope honour. Our prompts already demand JSON; this tightens it further.
+- **Token usage** from the response `usage` block is summed across all agent calls and
+  printed in the report. The mock backend reports no usage, which is why the demo
+  output above has no token line.
+
+This is the one path the mock cannot prove, so it is tested from the outside: the
+suite spins up a local `/chat/completions` endpoint and asserts the wire format,
+retry behaviour and error handling against it.
 
 ## Project layout
 
@@ -136,7 +160,7 @@ src/orchestra/
 data/
   knowledge_base/    six support notes
   tickets.json      three sample tickets
-tests/              36 unit and end-to-end tests
+tests/              50 unit and end-to-end tests
 ```
 
 ## Tests

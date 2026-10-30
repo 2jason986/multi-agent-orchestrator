@@ -6,12 +6,25 @@ import unittest
 from pathlib import Path
 
 from orchestra.knowledge import KnowledgeBase
+from orchestra.llm import Completion
 from orchestra.mock_llm import MockClient
 from orchestra.orchestrator import Orchestrator, summarise
 from orchestra.tickets import TicketStore
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data"
+
+
+class UsageMockClient(MockClient):
+    """Same scripted answers, plus token counts, so aggregation is testable offline."""
+
+    def complete(self, messages, *, temperature: float = 0.0) -> Completion:  # type: ignore[override]
+        completion = super().complete(messages, temperature=temperature)
+        return Completion(
+            text=completion.text,
+            model=completion.model,
+            usage={"prompt_tokens": 10, "completion_tokens": 5},
+        )
 
 
 def build_orchestrator(**kwargs: object) -> Orchestrator:
@@ -80,6 +93,23 @@ class OrchestratorTests(unittest.TestCase):
         markdown = orchestrator.handle(orchestrator.ticket_store.get("T-1001")).to_markdown()
         self.assertIn("### Reply", markdown)
         self.assertIn("| # | offset (ms) | event | actor | summary |", markdown)
+
+    def test_token_usage_is_aggregated_across_agents(self) -> None:
+        orchestrator = Orchestrator(
+            llm=UsageMockClient(),
+            knowledge_base=KnowledgeBase.from_directory(DATA / "knowledge_base"),
+            ticket_store=TicketStore.from_json(DATA / "tickets.json"),
+        )
+        result = orchestrator.handle(orchestrator.ticket_store.get("T-1001"))
+        # planner(1) + researcher(2) + responder(1) + reviewer(2) + revision(1)
+        self.assertEqual(result.tokens, {"prompt_tokens": 70, "completion_tokens": 35})
+        self.assertIn("tokens: prompt 70", result.to_markdown())
+
+    def test_mock_runs_report_no_tokens(self) -> None:
+        orchestrator = build_orchestrator()
+        result = orchestrator.handle(orchestrator.ticket_store.get("T-1003"))
+        self.assertEqual(result.tokens, {})
+        self.assertNotIn("- tokens:", result.to_markdown())
 
 
 if __name__ == "__main__":

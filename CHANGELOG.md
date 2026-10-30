@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Provider presets for OpenAI, DeepSeek, Moonshot and DashScope. `--provider deepseek`
+  alone is enough to run against the DeepSeek API; `custom` plus
+  `ORCHESTRA_BASE_URL` covers vLLM, Ollama and internal gateways.
+- Retries with exponential backoff for 408/409/425/429, 5xx and network failures.
+  Auth and payload errors still fail on the first attempt.
+- `--timeout` and `--json-mode` (`response_format=json_object`, honoured by OpenAI,
+  DeepSeek and DashScope).
+- Token usage from the API response is aggregated across agents and shown in the
+  report; the mock backend reports none, so its output is unchanged.
+- Wire-level tests that run the client against a local fake `/chat/completions`
+  endpoint: request shape, retries, error unwrapping and presets.
+
 ### Fixed
 
 - An agent that ran out of tool rounds used to hand its dangling `tool_calls`
@@ -19,7 +33,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Test suite grew to 36 cases.
+- HTTP failures are no longer treated as one class: retryable problems raise
+  `LLMRetryableError`, terminal ones raise `LLMError`.
+- Provider error bodies are unwrapped to `error.message` instead of a 500-character
+  JSON dump.
+- Test suite grew to 50 cases.
 
 ## [0.1.0] - 2026-10-30
 
@@ -39,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Execution tracing written as Markdown and JSON, covering agent spans, tool calls
   and review verdicts.
 - CLI with `run` and `demo` subcommands.
-- 36 unit and end-to-end tests running against the mock model.
+- 34 unit and end-to-end tests running against the mock model.
 - GitHub Actions CI on Python 3.10, 3.11 and 3.12, plus Dependabot, issue and pull
   request templates, Code of Conduct, security policy and contributing guide.
 

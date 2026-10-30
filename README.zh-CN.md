@@ -56,17 +56,36 @@ review rounds : 6
 
 ## 接真实模型
 
-默认用 `mock`，它是脚本化的确定性客户端，让整条链路可以离线跑。接真实模型只需要三个环境变量：
+默认用 `mock`，它是脚本化的确定性客户端，让整条链路可以离线跑。接真实模型只要选一个预设、设一个环境变量：
 
 ```bash
-export ORCHESTRA_API_KEY=sk-...
-export ORCHESTRA_BASE_URL=https://api.deepseek.com/v1
-export ORCHESTRA_MODEL=deepseek-chat
-python -m orchestra.cli --provider openai demo
+export ORCHESTRA_API_KEY=sk-...            # DeepSeek / OpenAI 的 key
+
+python -m orchestra.cli --provider deepseek demo
+python -m orchestra.cli --provider deepseek run --ticket T-1002 --json
 ```
 
-任何兼容 `/chat/completions` 的服务都能用：OpenAI、DeepSeek、Moonshot、通义、vLLM、Ollama。
-没有安装厂商 SDK，HTTP 请求用 `urllib` 直接发。
+| 预设 | Base URL | 默认模型 |
+|---|---|---|
+| `deepseek` | `https://api.deepseek.com/v1` | `deepseek-chat` |
+| `openai` | `https://api.openai.com/v1` | `gpt-4o-mini` |
+| `moonshot` | `https://api.moonshot.cn/v1` | `moonshot-v1-8k` |
+| `dashscope` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | `qwen-plus` |
+| `custom` | `ORCHESTRA_BASE_URL` | `ORCHESTRA_MODEL` |
+
+`ORCHESTRA_BASE_URL` 和 `ORCHESTRA_MODEL` 能覆盖任何预设，所以 vLLM、Ollama、公司内部网关用
+`--provider custom` 就行，不用改代码。没有装厂商 SDK，HTTP 请求用 `urllib` 直接发。
+
+客户端已经处理的事：
+
+- **429 和 5xx 自动重试两次**，指数退避，网络闪断也算在内。鉴权失败和请求体错误立即失败，重试只是浪费时间。
+- **错误信息会解包**成 `error.message`，失败时看到的是 `401: Authentication Fails`，不是一大块原始 JSON。
+- **`--timeout`** 控制单次请求超时；`deepseek-reasoner` 通常需要比默认 60 秒更长。
+- **`--json-mode`** 发送 `response_format=json_object`，OpenAI、DeepSeek、DashScope 都支持。
+- **token 用量**从响应的 `usage` 字段汇总所有 agent 调用，写进报告。mock 不返回 usage，所以上面的 demo 输出里没有 token 行。
+
+这条路径 mock 证明不了，所以从外部验证：测试会起一个本地 `/chat/completions` 端点，
+断言请求格式、重试行为和错误处理。
 
 ## 目录结构
 
@@ -85,7 +104,7 @@ src/orchestra/
 data/
   knowledge_base/   六篇知识库文档
   tickets.json      三条示例工单
-tests/              36 个单元测试与端到端测试
+tests/              50 个单元测试与端到端测试
 ```
 
 ## 测试
