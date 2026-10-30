@@ -103,6 +103,7 @@ class AgentOutcome:
     data: dict[str, Any]
     raw: str
     tool_results: list[ToolResult] = field(default_factory=list)
+    usage: dict[str, int] = field(default_factory=dict)
     elapsed_ms: float = 0.0
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -150,12 +151,15 @@ class Agent:
             {"role": "user", "content": self._user_content(task, context)},
         ]
         tool_results: list[ToolResult] = []
+        usage: dict[str, int] = {}
         raw = ""
         data: dict[str, Any] = {}
 
         for _ in range(self.max_tool_rounds + 1):
             completion = self.llm.complete(messages)
             raw = completion.text
+            for key, value in completion.usage.items():
+                usage[key] = usage.get(key, 0) + int(value)
             data = extract_json(completion.text)
             calls = data.get("tool_calls") or []
             if not calls:
@@ -187,6 +191,7 @@ class Agent:
             data=data,
             raw=raw,
             tool_results=tool_results,
+            usage=usage,
             elapsed_ms=(time.perf_counter() - started) * 1000,
         )
 

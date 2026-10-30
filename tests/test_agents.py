@@ -15,13 +15,16 @@ class ScriptedClient:
 
     name = "scripted"
 
-    def __init__(self, replies: list[str]) -> None:
+    def __init__(self, replies: list[str], usage: dict[str, int] | None = None) -> None:
         self.replies = list(replies)
+        self.usage = dict(usage or {})
         self.requests: list[Sequence[Message]] = []
 
     def complete(self, messages: Sequence[Message], *, temperature: float = 0.0) -> Completion:
         self.requests.append(list(messages))
-        return Completion(text=self.replies.pop(0), model="scripted")
+        return Completion(
+            text=self.replies.pop(0), model="scripted", usage=dict(self.usage)
+        )
 
 
 class AgentTests(unittest.TestCase):
@@ -79,6 +82,24 @@ class AgentTests(unittest.TestCase):
         self.assertNotIn("tool_calls", outcome.data)
         # max_tool_rounds=1 means the first and the follow-up round both ran tools.
         self.assertEqual(len(outcome.tool_results), 2)
+
+    def test_usage_is_accumulated_across_tool_rounds(self) -> None:
+        registry = ToolRegistry()
+        registry.register(
+            FunctionTool(
+                spec=ToolSpec(name="echo", description="echo", parameters={"value": "str"}),
+                func=lambda value: value,
+            )
+        )
+        client = ScriptedClient(
+            [
+                '{"tool_calls": [{"name": "echo", "arguments": {"value": "a"}}]}',
+                '{"summary": "done"}',
+            ],
+            usage={"prompt_tokens": 10, "completion_tokens": 2},
+        )
+        outcome = Agent("researcher", client, registry=registry).run("TASK: hi")
+        self.assertEqual(outcome.usage, {"prompt_tokens": 20, "completion_tokens": 4})
 
     def test_unknown_role_is_rejected(self) -> None:
         with self.assertRaises(ValueError):

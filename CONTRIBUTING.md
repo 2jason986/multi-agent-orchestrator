@@ -31,7 +31,7 @@ proved that the pipeline still produces a sensible reply.
 - New agent roles need an output contract documented in `README.md` and a test
   that fails when the contract is violated.
 - Bug fixes should come with a test that fails on the old code. This repository
-  runs 36 tests in under a second; there is no excuse for an untested path.
+  runs 50 tests in a few seconds; there is no excuse for an untested path.
 - Changes to prompts are changes to behaviour. Describe what you measured, not
   what you felt.
 

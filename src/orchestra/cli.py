@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 from .knowledge import KnowledgeBase
-from .llm import LLMClient, OpenAICompatibleClient
+from .llm import PROVIDER_PRESETS, LLMClient, OpenAICompatibleClient
 from .mock_llm import MockClient
 from .orchestrator import Orchestrator, RunResult, summarise
 from .tickets import TicketStore
@@ -27,16 +27,21 @@ def _resolve_data_dir(explicit: str | None) -> Path:
     )
 
 
-def _build_client(provider: str, model: str | None) -> LLMClient:
-    if provider == "mock":
+def _build_client(args: argparse.Namespace) -> LLMClient:
+    if args.provider == "mock":
         return MockClient()
-    return OpenAICompatibleClient(model=model)
+    return OpenAICompatibleClient(
+        model=args.model,
+        provider=args.provider,
+        timeout=args.timeout,
+        json_mode=args.json_mode,
+    )
 
 
 def _build_orchestrator(args: argparse.Namespace) -> Orchestrator:
     data_dir = _resolve_data_dir(args.data_dir)
     return Orchestrator(
-        llm=_build_client(args.provider, args.model),
+        llm=_build_client(args),
         knowledge_base=KnowledgeBase.from_directory(data_dir / "knowledge_base"),
         ticket_store=TicketStore.from_json(data_dir / "tickets.json"),
         max_review_rounds=args.max_review_rounds,
@@ -101,6 +106,11 @@ def cmd_demo(args: argparse.Namespace) -> int:
     print(f"approved      : {summary['approved']}")
     print(f"needs a human : {summary['needs_human']}")
     print(f"review rounds : {summary['rounds']}")
+    if summary["prompt_tokens"] or summary["completion_tokens"]:
+        print(
+            f"tokens        : prompt {summary['prompt_tokens']} · "
+            f"completion {summary['completion_tokens']}"
+        )
     report = _write_report(results, Path(args.out))
     # The demo mutates ticket status in memory only; persist it so the run is inspectable.
     orchestrator.ticket_store.save(Path(args.out) / "tickets.json")
@@ -115,11 +125,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--provider",
-        choices=["mock", "openai"],
+        choices=["mock", *sorted(PROVIDER_PRESETS), "custom"],
         default="mock",
-        help="model backend: mock (offline, default) or any OpenAI-compatible endpoint",
+        help="model backend: mock (offline, default), a preset, or custom via ORCHESTRA_BASE_URL",
     )
     parser.add_argument("--model", default=None, help="model name, e.g. deepseek-chat")
+    parser.add_argument(
+        "--timeout", type=float, default=60.0, help="per-request timeout in seconds"
+    )
+    parser.add_argument(
+        "--json-mode",
+        action="store_true",
+        help="send response_format=json_object (supported by OpenAI, DeepSeek and others)",
+    )
     parser.add_argument(
         "--data-dir", default=None, help="folder holding knowledge_base/ and tickets.json"
     )

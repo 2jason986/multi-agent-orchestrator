@@ -34,6 +34,7 @@ class RunResult:
     approved: bool
     rounds: int
     citations: list[str] = field(default_factory=list)
+    tokens: dict[str, int] = field(default_factory=dict)
     feedback: str = ""
     trace: Trace | None = None
 
@@ -46,17 +47,32 @@ class RunResult:
             f"- priority: **{self.priority}**",
             f"- review rounds: {self.rounds} ({status})",
             f"- citations: {citations}",
-            "",
-            "### Reply",
-            "",
-            self.reply.strip(),
-            "",
-            "### Trace",
-            "",
-            self.trace.to_markdown() if self.trace else "_no trace_",
-            "",
         ]
+        token_line = self._token_line()
+        if token_line:
+            parts.append(token_line)
+        parts.extend(
+            [
+                "",
+                "### Reply",
+                "",
+                self.reply.strip(),
+                "",
+                "### Trace",
+                "",
+                self.trace.to_markdown() if self.trace else "_no trace_",
+                "",
+            ]
+        )
         return "\n".join(parts)
+
+    def _token_line(self) -> str | None:
+        """Token counts only show up when the backend actually reports them."""
+        prompt = self.tokens.get("prompt_tokens")
+        completion = self.tokens.get("completion_tokens")
+        if prompt is None and completion is None:
+            return None
+        return f"- tokens: prompt {prompt or 0} · completion {completion or 0}"
 
 
 class Orchestrator:
@@ -87,9 +103,15 @@ class Orchestrator:
         trace = Trace(title=f"{ticket.id} · {ticket.subject}")
         trace.record("ticket.received", "orchestrator", ticket.subject, ticket_id=ticket.id)
         prompt = ticket.to_prompt()
+        tokens: dict[str, int] = {}
+
+        def merge_usage(outcome: Any) -> None:
+            for key, value in outcome.usage.items():
+                tokens[key] = tokens.get(key, 0) + int(value)
 
         started = trace.span("agent", "planner", "classify and break down the request")
         plan = self.planner.run(prompt)
+        merge_usage(plan)
         priority = str(plan.get("priority", "normal"))
         queries = [str(item) for item in plan.get("queries") or [ticket.subject]]
         trace.close_span(
@@ -103,6 +125,7 @@ class Orchestrator:
 
         started = trace.span("agent", "researcher", f"search knowledge base for {queries[0]!r}")
         research = self.researcher.run(prompt, context={"QUERY": queries[0]})
+        merge_usage(research)
         for result in research.tool_results:
             trace.record(
                 "tool.call",
@@ -128,6 +151,7 @@ class Orchestrator:
 
         started = trace.span("agent", "responder", "draft the customer reply")
         draft = self.responder.run(prompt, context={"RESEARCH_NOTES": notes})
+        merge_usage(draft)
         reply = str(draft.get("draft", ""))
         citations = [str(item) for item in draft.get("citations") or citations]
         trace.close_span(started, "agent", "responder", f"{len(reply)} characters drafted")
@@ -141,6 +165,7 @@ class Orchestrator:
             review = self.reviewer.run(
                 prompt, context={"DRAFT": reply, "REVIEW_ROUND": rounds}
             )
+            merge_usage(review)
             verdict = str(review.get("verdict", "revise"))
             feedback = str(review.get("feedback", ""))
             trace.close_span(started, "agent", "reviewer", f"verdict={verdict}", feedback=feedback)
@@ -151,6 +176,7 @@ class Orchestrator:
             revision = self.responder.run(
                 prompt, context={"RESEARCH_NOTES": notes, "REVIEW_FEEDBACK": feedback}
             )
+            merge_usage(revision)
             reply = str(revision.get("draft") or reply)
             citations = [str(item) for item in revision.get("citations") or citations]
             trace.close_span(started, "agent", "responder", "reply revised")
@@ -170,6 +196,7 @@ class Orchestrator:
             approved=approved,
             rounds=rounds,
             citations=citations,
+            tokens=tokens,
             feedback=feedback,
             trace=trace,
         )
@@ -186,4 +213,8 @@ def summarise(results: list[RunResult]) -> dict[str, Any]:
         "approved": sum(1 for result in results if result.approved),
         "needs_human": sum(1 for result in results if not result.approved),
         "rounds": sum(result.rounds for result in results),
+        "prompt_tokens": sum(result.tokens.get("prompt_tokens", 0) for result in results),
+        "completion_tokens": sum(
+            result.tokens.get("completion_tokens", 0) for result in results
+        ),
     }

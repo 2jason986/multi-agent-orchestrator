@@ -70,6 +70,9 @@ later.
 | Reviewer keeps rejecting | Loop stops at `max_review_rounds`, ticket status becomes `needs_human` |
 | Retrieval returns nothing | Researcher answers "no matching notes", responder is told to escalate rather than invent |
 | Model endpoint unreachable or key missing | `LLMError` with the endpoint and status, printed by the CLI with exit code 1 |
+| Provider returns 429 or 5xx | Retried twice with exponential backoff, then `LLMRetryableError`; auth and payload errors are never retried |
+| Provider uses its own error envelope | `error.message` is extracted before the string reaches the trace |
+| Provider reports token usage | Summed per agent and per run, printed in the report; backends that omit `usage` simply show no token line |
 
 ## Failure modes not handled yet
 
@@ -78,7 +81,8 @@ later.
   instructed to treat it as data only.
 - **No retry on malformed JSON.** A single bad reply aborts the run instead of
   re-asking the model once with a correction hint.
-- **No token or cost accounting.** Each agent call is timed but not priced.
+- **No cost estimate.** Token counts are aggregated per run, but there is no price
+  table, so spend is not converted to currency.
 - **Single-threaded.** Tickets are processed sequentially; nothing is shared, so
   parallelising at the `handle_all` level is safe but not implemented.
 
@@ -87,6 +91,9 @@ later.
 **A new agent role.** Add an entry to `INSTRUCTIONS` in `agents.py`, give it an
 output contract, and call it from `Orchestrator.handle`. `build_agents` picks up
 roles by name.
+
+**A different provider.** Presets live in `PROVIDER_PRESETS` in `llm.py`; adding one
+is a dictionary entry. Anything without a preset works with `ORCHESTRA_BASE_URL`.
 
 **A different model per role.** `Orchestrator` accepts an `agents=` mapping; build
 each `Agent` with its own client, for example a cheap model for the planner and a
