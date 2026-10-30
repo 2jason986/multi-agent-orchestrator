@@ -1,0 +1,7 @@
+# Default owner for everything in the repository.
+* @2jason986
+
+# Agent prompts and output contracts decide runtime behaviour; keep them reviewed.
+/src/orchestra/agents.py @2jason986
+/src/orchestra/orchestrator.py @2jason986
+/.github/ @2jason986

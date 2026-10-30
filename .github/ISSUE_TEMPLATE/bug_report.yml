@@ -1,0 +1,66 @@
+name: Bug report
+description: Something in the pipeline behaved differently from what the docs say.
+title: "[bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The trace JSON is the single most useful thing you can attach,
+        so please grab it if the pipeline ran at all.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: The observed behaviour, in concrete terms.
+      placeholder: The reviewer approved a draft that contained a price not present in the knowledge base.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Exact command and, if relevant, the ticket JSON.
+      render: shell
+      placeholder: |
+        python -m orchestra.cli run --ticket T-1002 --json
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Commit or version
+      placeholder: v0.1.0 / 3f2a1c9
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Model provider
+      options:
+        - mock
+        - openai-compatible
+        - other (describe below)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Trace or logs
+      description: Paste the trace JSON, the CLI output, or both. Redact API keys.
+      render: json
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues for a duplicate.
+          required: true
+        - label: This is not a security issue (those go through SECURITY.md).
+          required: true

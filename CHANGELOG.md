@@ -1,0 +1,33 @@
+# Changelog
+
+All notable changes to this project are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+## [0.1.0] - 2026-10-30
+
+### Added
+
+- Four-role orchestration loop: planner, researcher, responder, reviewer, with a
+  bounded revision budget and automatic escalation to a human.
+- Strict JSON output contract per agent, with a tolerant extractor for fenced and
+  prose-wrapped model replies.
+- Tool registry with uniform error handling and two built-in tools, `kb_search`
+  and `ticket_lookup`.
+- Dependency-free TF-IDF retriever over a Markdown knowledge base, including CJK
+  bigram tokenisation and query-aware excerpt extraction.
+- Deterministic mock model so the full pipeline runs offline, in tests and in CI.
+- OpenAI-compatible model client built on `urllib`, configurable through
+  `ORCHESTRA_API_KEY`, `ORCHESTRA_BASE_URL` and `ORCHESTRA_MODEL`.
+- Execution tracing written as Markdown and JSON, covering agent spans, tool calls
+  and review verdicts.
+- CLI with `run` and `demo` subcommands.
+- 34 unit and end-to-end tests running against the mock model.
+- GitHub Actions CI on Python 3.10, 3.11 and 3.12, plus Dependabot, issue and pull
+  request templates, Code of Conduct, security policy and contributing guide.
+
+[Unreleased]: https://github.com/2jason986/multi-agent-orchestrator/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/2jason986/multi-agent-orchestrator/releases/tag/v0.1.0

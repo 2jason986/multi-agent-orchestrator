@@ -1,0 +1,44 @@
+name: Feature request
+description: Propose a new capability or a change in orchestration behaviour.
+title: "[feat]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve
+      description: Describe the situation, not the solution. What breaks down today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Which module changes, which agent role changes, and what the new output contract would be.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Including doing nothing, which is often right.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - orchestration loop
+        - agent prompts and contracts
+        - tools and retrieval
+        - tracing and observability
+        - CLI and developer experience
+        - documentation
+    validations:
+      required: true
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints
+      options:
+        - label: This can be done without adding a runtime dependency.
+        - label: I am willing to open a pull request for it.

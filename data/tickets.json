@@ -1,0 +1,34 @@
+{
+  "tickets": [
+    {
+      "id": "T-1001",
+      "subject": "数据导出任务一直卡在 90%",
+      "body": "我点了导出全部客户记录，进度条走到 90% 就不动了，已经等了四十分钟。文件大概有 12 万条记录，CSV 格式。请问是导出失败了吗？需要重新提交吗？",
+      "customer": "ops@acme-logistics.cn",
+      "channel": "email",
+      "created_at": "2026-10-28T09:12:00+08:00",
+      "status": "open",
+      "tags": ["export", "stuck"]
+    },
+    {
+      "id": "T-1002",
+      "subject": "生产环境批量调用接口返回大量 429",
+      "body": "我们的生产环境昨晚升级后，批量同步脚本开始报 429 Too Many Requests，一小时大概有三千多条失败。我们是企业版客户，按文档写的 600 QPS，实际只跑到 80 左右就被限流了，业务已经受影响。",
+      "customer": "platform@fintech-demo.com",
+      "channel": "email",
+      "created_at": "2026-10-29T02:40:00+08:00",
+      "status": "open",
+      "tags": ["api", "rate-limit", "production"]
+    },
+    {
+      "id": "T-1003",
+      "subject": "上个月的发票抬头写错了需要重开",
+      "body": "十月的发票抬头写成了旧公司名字，税号是对的。能不能作废重开一张？我们财务这个月要结账，希望十号之前拿到新发票。",
+      "customer": "finance@studio-nine.cn",
+      "channel": "email",
+      "created_at": "2026-10-29T16:05:00+08:00",
+      "status": "open",
+      "tags": ["billing", "invoice"]
+    }
+  ]
+}
