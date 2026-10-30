@@ -160,7 +160,7 @@ src/orchestra/
 data/
   knowledge_base/    six support notes
   tickets.json      three sample tickets
-tests/              50 unit and end-to-end tests
+tests/              51 unit and end-to-end tests
 ```
 
 ## Tests

@@ -104,7 +104,7 @@ src/orchestra/
 data/
   knowledge_base/   六篇知识库文档
   tickets.json      三条示例工单
-tests/              50 个单元测试与端到端测试
+tests/              51 个单元测试与端到端测试
 ```
 
 ## 测试

@@ -5,6 +5,7 @@ from __future__ import annotations
 import unittest
 from pathlib import Path
 
+from orchestra.cli import _summary_payload
 from orchestra.knowledge import KnowledgeBase
 from orchestra.llm import Completion
 from orchestra.mock_llm import MockClient
@@ -110,6 +111,17 @@ class OrchestratorTests(unittest.TestCase):
         result = orchestrator.handle(orchestrator.ticket_store.get("T-1003"))
         self.assertEqual(result.tokens, {})
         self.assertNotIn("- tokens:", result.to_markdown())
+
+    def test_json_summary_carries_token_usage(self) -> None:
+        orchestrator = Orchestrator(
+            llm=UsageMockClient(),
+            knowledge_base=KnowledgeBase.from_directory(DATA / "knowledge_base"),
+            ticket_store=TicketStore.from_json(DATA / "tickets.json"),
+        )
+        result = orchestrator.handle(orchestrator.ticket_store.get("T-1003"))
+        payload = _summary_payload(result)
+        self.assertEqual(payload["tokens"], {"prompt_tokens": 70, "completion_tokens": 35})
+        self.assertEqual(payload["ticket_id"], "T-1003")
 
 
 if __name__ == "__main__":
