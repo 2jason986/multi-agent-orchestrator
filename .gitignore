@@ -29,3 +29,4 @@ Thumbs.db
 # Secrets
 .env
 _gh_*.ps1
+_profile_README.md
